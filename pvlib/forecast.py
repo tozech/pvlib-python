@@ -409,8 +409,8 @@ class ForecastModel(object):
             times = netCDF4.num2date(time[:].squeeze(), time.units,
                             only_use_cftime_datetimes=False,
                             only_use_python_datetimes=True)
-        except AttributeError as exc:
-            warnings.warn(("Omitting parameters only_use_cftime_datetimes=False "       " and only_use_python_datetimes=True for older versions of netCDF4")
+        except TypeError as exc:
+            warnings.warn(("Omitting parameters only_use_cftime_datetimes=False "       " and only_use_python_datetimes=True for older versions of netCDF4"))
             times = netCDF4.num2date(time[:].squeeze(), time.units)
         self.time = pd.DatetimeIndex(pd.Series(times), tz=self.location.tz)
 
