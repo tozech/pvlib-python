@@ -2,7 +2,7 @@
 The 'forecast' module contains class definitions for
 retreiving forecasted data from UNIDATA Thredd servers.
 '''
-from netCDF4 import num2date
+import netCDF4
 import numpy as np
 import pandas as pd
 from requests.exceptions import HTTPError
@@ -405,9 +405,13 @@ class ForecastModel(object):
         -------
         pandas.DatetimeIndex
         '''
-        times = num2date(time[:].squeeze(), time.units,
-                         only_use_cftime_datetimes=False,
-                         only_use_python_datetimes=True)
+        try:
+            times = netCDF4.num2date(time[:].squeeze(), time.units,
+                            only_use_cftime_datetimes=False,
+                            only_use_python_datetimes=True)
+        except AttributeError as exc:
+            warnings.warn(("Omitting parameters only_use_cftime_datetimes=False "       " and only_use_python_datetimes=True for older versions of netCDF4")
+            times = netCDF4.num2date(time[:].squeeze(), time.units)
         self.time = pd.DatetimeIndex(pd.Series(times), tz=self.location.tz)
 
     def cloud_cover_to_ghi_linear(self, cloud_cover, ghi_clear, offset=35,
