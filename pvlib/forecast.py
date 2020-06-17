@@ -219,7 +219,7 @@ class ForecastModel(object):
 
     def get_data(self, latitude, longitude, start, end,
                  vert_level=None, query_variables=None,
-                 close_netcdf_data=True, **kwargs):
+                 close_netcdf_data=True, outformat='pandas', **kwargs):
         """
         Submits a query to the UNIDATA servers using Siphon NCSS and
         converts the netcdf data to a pandas DataFrame.
@@ -241,12 +241,14 @@ class ForecastModel(object):
         close_netcdf_data: bool, default True
             Controls if the temporary netcdf data file should be closed.
             Set to False to access the raw data.
+        outformat: str, default 'pandas'
+            Switch between pandas or xarray as return type
         **kwargs:
             Additional keyword arguments are silently ignored.
 
         Returns
         -------
-        forecast_data : DataFrame
+        forecast_data : pd.DataFrame or xarray.Dataset
             column names are the weather model's variable names.
         """
 
@@ -276,10 +278,16 @@ class ForecastModel(object):
 
         self.netcdf_data = self.ncss.get_data(self.query)
 
-        # might be better to go to xarray here so that we can handle
+        # TODO might be better to go to xarray here so that we can handle
         # higher dimensional data for more advanced applications
-        self.data = self._netcdf2pandas(self.netcdf_data, self.query_variables,
-                                        self.start, self.end)
+        if outformat == 'pandas':
+            self.data = self._netcdf2pandas(self.netcdf_data, self.query_variables,
+                                            self.start, self.end)
+        elif outformat == 'xarray':
+            self.data = self._netcdf2xarray(self.netcdf_data)
+        else:
+            msg = f"outformat={outformat} is not implemented. Choose either 'pandas' or 'xarray'."
+            raise NotImplementedError
 
         if close_netcdf_data:
             self.netcdf_data.close()
@@ -390,6 +398,32 @@ class ForecastModel(object):
         # T0 and start are added *after* end. So sort and slice
         # to remove the garbage
         data = data.sort_index().loc[start:end]
+        return data
+    
+    def _netcdf2xarray(self, netcdf_data):#, query_variables, start, end):
+        """
+        Transforms data from netcdf to xarray Dataset.
+
+        Parameters
+        ----------
+        data: netcdf
+            Data returned from UNIDATA NCSS query.
+        query_variables: list
+            The variables requested.
+        start: Timestamp
+            The start time
+        end: Timestamp
+            The end time
+
+        Returns
+        -------
+        xarray.Dataset
+        """
+        from xarray.backends import NetCDF4DataStore
+        import xarray as xr
+
+        data = xr.open_dataset(NetCDF4DataStore(netcdf_data),
+                               drop_variables='isobaric')
         return data
 
     def set_time(self, time):

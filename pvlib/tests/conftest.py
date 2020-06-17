@@ -138,6 +138,15 @@ requires_netCDF4 = pytest.mark.skipif(not has_netCDF4,
                                       reason='requires netCDF4')
 
 try:
+    import xarray as xr
+    has_xarray = True
+except ImportError:
+    has_xarray = False
+    
+requires_xarray = pytest.mark.skipif(not has_xarray,
+                                     reason='requires xarray')
+
+try:
     import pvfactors  # noqa: F401
     has_pvfactors = True
 except ImportError:
@@ -156,14 +165,15 @@ except ImportError:
 requires_pysam = pytest.mark.skipif(not has_pysam, reason="requires PySAM")
 
 
-try:
-    import cftime  # noqa: F401
-
-    has_recent_cftime = parse_version(cftime.__version__) > parse_version(
-        "1.1.0"
-    )
-except ImportError:
-    has_recent_cftime = False
+#try:
+#    import cftime  # noqa: F401
+#
+#    has_recent_cftime = parse_version(cftime.__version__) > parse_version(
+#        "1.1.0"
+#    )
+#except ImportError:
+#    has_recent_cftime = False
+has_recent_cftime = True
 
 requires_recent_cftime = pytest.mark.skipif(
     not has_recent_cftime, reason="requires cftime > 1.1.0"

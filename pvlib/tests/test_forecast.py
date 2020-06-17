@@ -9,6 +9,7 @@ from numpy.testing import assert_allclose
 from conftest import (
     requires_siphon,
     has_siphon,
+    requires_xarray,
     skip_windows,
     requires_recent_cftime,
 )
@@ -210,3 +211,18 @@ def test_cloud_cover_to_ghi_linear():
     assert_allclose(out, 1000)
     out = amodel.cloud_cover_to_ghi_linear(100, ghi_clear, offset=offset)
     assert_allclose(out, 250)
+
+@requires_siphon
+@requires_xarray
+@requires_recent_cftime
+@pytest.mark.remote_data
+@pytest.mark.flaky(reruns=RERUNS, reruns_delay=RERUNS_DELAY)
+def test_xarray_get_data():
+    import xarray as xr
+    amodel = GFS()
+    new_variables = ['u-component_of_wind_height_above_ground']
+    data = amodel.get_data(_latitude, _longitude, _start, _end,
+                           #query_variables=new_variables, 
+                           outformat='xarray')
+    assert isinstance(data, xr.Dataset)
+    
